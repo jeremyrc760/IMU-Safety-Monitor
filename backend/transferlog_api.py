@@ -1,10 +1,10 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pathlib import Path
 from datetime import datetime
 import json
 
-# ---------- Paths (local to project) ----------
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "raw_data"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -20,10 +20,9 @@ def health():
 @app.route("/api/imu", methods=["POST"])
 def imu_post():
     payload = request.get_json(silent=True) or {}
-    for k in ["ax", "ay", "az", "gx", "gy", "gz"]:
+    for k in ["ax","ay","az","gx","gy","gz"]:
         payload.setdefault(k, 0.0)
     payload["ts"] = datetime.utcnow().isoformat() + "Z"
-
     with open(IMU_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
     return jsonify(status="saved", file=str(IMU_FILE), data=payload)
@@ -34,22 +33,8 @@ def imu_get():
         with open(IMU_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
     else:
-        data = {
-            "ax": 0.0, "ay": 0.0, "az": 9.8,
-            "gx": 0.0, "gy": 0.0, "gz": 0.0,
-            "ts": datetime.utcnow().isoformat() + "Z",
-            "note": "no data posted yet"
-        }
+        data = {"ax":0,"ay":0,"az":9.8,"gx":0,"gy":0,"gz":0,"ts":datetime.utcnow().isoformat()+"Z"}
     return jsonify(data)
 
-@app.route("/save", methods=["POST"])
-def save_generic():
-    data = request.get_json(silent=True) or {}
-    out = RAW_DIR / "data.json"
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    return jsonify(status="ok", saved_to=str(out))
-
 if __name__ == "__main__":
-    print("[INFO] RAW_DIR ->", RAW_DIR)
     app.run(host="0.0.0.0", port=5000, debug=True)
